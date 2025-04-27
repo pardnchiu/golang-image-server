@@ -137,7 +137,7 @@ curl -X DELETE \
 ### 流程圖
 
 <details>
-<summary>Upload</summary>
+<summary>Load</summary>
 
 ```mermaid
 flowchart TD
@@ -170,7 +170,7 @@ flowchart TD
 </details>
 
 <details>
-<summary>Load</summary>
+<summary>Upload</summary>
 
 ```mermaid
 flowchart TD

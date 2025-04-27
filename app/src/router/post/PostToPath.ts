@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import { mkdirSync, } from "fs";
 import multer from "multer";
 
-const root = process.cwd();
-
 function UUID(length: number = 32) {
     const UUIDChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let charLength = UUIDChars.length;
@@ -15,6 +13,8 @@ function UUID(length: number = 32) {
 
     return key;
 };
+
+const root = process.cwd();
 
 export default async function PostToPath(req: Request, res: Response) {
     const upload = multer({
@@ -54,7 +54,7 @@ export default async function PostToPath(req: Request, res: Response) {
         })
     }).single("filename");
 
-    upload(req, res, (err: any) => {
+    upload(req, res, (err) => {
         if (err) {
             let message = err.message;
             switch (err.message) {
@@ -79,4 +79,4 @@ export default async function PostToPath(req: Request, res: Response) {
             src: file.path.replace(root + "/storage/image/upload", process.env.NODE_ENV === "development" ? "http://localhost:8080/c/img" : `https://${process.env.DOMAIN}/c/img`),
         });
     });
-}
+};

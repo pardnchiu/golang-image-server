@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-export default (req: Request, res: Response, cb: () => void) => {
+export default (_: Request, res: Response, cb: Function) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Access-Control-Allow-Methods", "GET,PUT,PATCH,POST,DELETE");

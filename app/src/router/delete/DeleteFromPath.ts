@@ -4,7 +4,7 @@ import { join, extname, basename } from "path";
 
 const root = process.cwd();
 
-export default async function DeleteFromPath(req: Request, res: Response) {
+export default function DeleteFromPath(req: Request, res: Response) {
     const path = String(req.params.path || "").replace(/\/$/, "");
 
     if (path == null || path.length < 1) {
@@ -57,4 +57,4 @@ export default async function DeleteFromPath(req: Request, res: Response) {
     catch (err: any) {
         res.status(500).send(err.message);
     };
-};
+}

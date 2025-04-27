@@ -1,3 +1,4 @@
+import { Request, Response } from "express";
 
 const morgan = require("morgan");
 const moment = require("moment-timezone");
@@ -12,12 +13,16 @@ morgan.token("date-self", () => {
     return moment().tz("Asia/Taipei").format("YYYY-MM-DDTHH:mm:ss");
 });
 
-morgan.token("country-self", (req: any, _: any) => {
+morgan.token("country-self", (req: Request, _: Response) => {
     return get_country(req);
 });
 
-morgan.token("ip-self", (req: any, _: any) => {
-    let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+morgan.token("ip-self", (req: Request, _: Response) => {
+    let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "-.-.-.-";
+
+    if (Array.isArray(ip)) {
+        ip = ip[0];
+    };
 
     if (ip.length < 15) {
         ip = ip + Array(15 - ip.length).fill(' ').join("");
@@ -26,7 +31,7 @@ morgan.token("ip-self", (req: any, _: any) => {
     return ip;
 });
 
-morgan.token("method-self", (req: any, _: any) => {
+morgan.token("method-self", (req: Request, _: Response) => {
     let method = req.method;
 
     if (method.length < 6) {
@@ -62,28 +67,28 @@ morgan.token("method-self", (req: any, _: any) => {
  */
 export default morgan(`:date-self: :status | :country-self | :ip-self | :method-self | :url (:response-time ms) | :referrer`, {
     stream: stream,
-    skip: (req: any, _: any) => {
-        const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-        const userAgent = req.headers["user-agent"] || "";
-        const host = req.get("host");
-        const is_dev = /dev\./.test(host);
-        const is_host = /(10\.7\.22|10\.8\.9|10\.79\.89)/.test(ip);
+    skip: (req: Request, res: Response) => {
+        let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "-.-.-.-";
 
-        const isUptime = userAgent.includes("Uptime-Kuma");
+        if (Array.isArray(ip)) {
+            ip = ip[0];
+        };
 
         return (
-            (!is_dev && is_host) ||
-            isUptime ||
-            (req.originalUrl.startsWith("/image") && req.status !== 404) ||
-            (req.originalUrl.startsWith("/js") && req.status !== 404) ||
-            (req.originalUrl.startsWith("/css") && req.status !== 404)
+            (req.originalUrl.startsWith("/image") && res.statusCode !== 404) ||
+            (req.originalUrl.startsWith("/js") && res.statusCode !== 404) ||
+            (req.originalUrl.startsWith("/css") && res.statusCode !== 404)
         );
     }
 });
 
-function get_country(req: any) {
+function get_country(req: Request) {
     const geoip = require("geoip-lite");
-    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "-.-.-.-";
+
+    if (Array.isArray(ip)) {
+        ip = ip[0];
+    };
 
     let geo: any;
 

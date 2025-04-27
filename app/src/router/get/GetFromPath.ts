@@ -5,14 +5,17 @@ import sharp from "sharp";
 const root = process.cwd();
 
 export default async function GetFromPath(req: Request, res: Response) {
+    let { s, size, w, width, h, height, q, quality, o, origin, d, dark, t, type } = req.query;
+
+    const imgSize = (s || size) as string | undefined;
+    const imgWidth = (w || width) as string | undefined;
+    const imgHeight = (h || height) as string | undefined;
+    const imgQuality = (q || quality) as string | undefined;
+    const imgOrigin = (o || origin) as string | undefined;
+    const imgDark = (d || dark) as string | undefined;
+    let imgType = (t || type) as string | undefined;
+
     const filepath = root + req.url.replace(/\/c\/img\//, "\/storage\/image\/upload\/").split("?")[0];
-    let size = req.query.s || req.query.size as string | undefined;
-    let width = req.query.w || req.query.width as string | undefined;
-    let height = req.query.h || req.query.height as string | undefined;
-    let quality = req.query.q || req.query.quality as string | undefined;
-    let origin = req.query.o || req.query.origin as string | undefined;
-    let dark = req.query.d || req.query.dark as string | undefined;
-    let type = req.query.t || req.query.type as string | undefined;
 
     if ((/\.pdf$/.test(filepath))) {
         res.setHeader("Content-Type", "application/pdf");
@@ -25,17 +28,17 @@ export default async function GetFromPath(req: Request, res: Response) {
         return;
     };
 
-    if (type == null || !({
+    if (imgType == null || !({
         jpeg: 1,
         jpg: 1,
         png: 1,
         avif: 1,
         webp: 1
-    } as Record<string, number>)[String(type)]) {
-        type = "webp";
+    } as Record<string, number>)[String(imgType)]) {
+        imgType = "webp";
     }
-    else if (type == "jpeg") {
-        type = "jpg";
+    else if (imgType == "jpeg") {
+        imgType = "jpg";
     };
 
     const cachefolder = root + "/storage/image/cache/" + req.params.path.replace(/\/\w+\.\w+$/, "");
@@ -44,20 +47,20 @@ export default async function GetFromPath(req: Request, res: Response) {
             .replace(/\/storage\/image\/upload\//, "\/storage\/image\/cache\/")
             .replace(/\.\w+$/, "");
         switch (true) {
-            case (size != null):
-                return `${path}_${size}.${type}`;
-            case (width != null && height != null):
-                return `${path}_${width}_${height}.${type}`;
-            case (width != null):
-                return `${path}_${width}_auto.${type}`;
-            case (height != null):
-                return `${path}_auto_${height}.${type}`;
+            case (imgSize != null):
+                return `${path}_${imgSize}.${imgType}`;
+            case (imgWidth != null && imgHeight != null):
+                return `${path}_${imgWidth}_${imgHeight}.${imgType}`;
+            case (imgWidth != null):
+                return `${path}_${imgWidth}_auto.${imgType}`;
+            case (imgHeight != null):
+                return `${path}_auto_${imgHeight}.${imgType}`;
             default:
-                return `${path}.${type}`;
+                return `${path}.${imgType}`;
         };
     })();
 
-    if (parseInt(String(origin)) == 1) {
+    if (+String(imgOrigin) == 1) {
         switch (true) {
             case (/\.jpe?g$/.test(filepath)): res.setHeader("Content-Type", "image/jpeg"); break;
             case (/\.png$/.test(filepath)): res.setHeader("Content-Type", "image/png"); break;
@@ -77,8 +80,9 @@ export default async function GetFromPath(req: Request, res: Response) {
         // * 緩存不存在不做動作，只是接收 readFileSync 的錯誤，讓流程繼續
     };
 
+    console.log(cachepath);
     if (cacheFile != null) {
-        switch (type) {
+        switch (imgType) {
             case "jpg":
                 res.setHeader("Content-Type", "image/jpeg");
                 break;
@@ -109,24 +113,24 @@ export default async function GetFromPath(req: Request, res: Response) {
             let newWidth = originWidth;
             let newHeight = originHeight;
 
-            if (size != null && originWidth > originHeight) {
-                newHeight = Math.min(+String(size), originHeight);
+            if (imgSize != null && originWidth > originHeight) {
+                newHeight = Math.min(+imgSize, originHeight);
                 newWidth = Math.floor((newHeight / originHeight) * originWidth);
             }
-            else if (size != null && originWidth <= originHeight) {
-                newWidth = Math.min(+String(size), originWidth);
+            else if (imgSize != null && originWidth <= originHeight) {
+                newWidth = Math.min(+imgSize, originWidth);
                 newHeight = Math.floor((newWidth / originWidth) * originHeight);
             }
-            else if (width != null && height != null) {
-                newWidth = Math.min(+String(width), originWidth);
-                newHeight = Math.min(+String(height), originHeight);
+            else if (imgWidth != null && imgHeight != null) {
+                newWidth = Math.min(+imgWidth, originWidth);
+                newHeight = Math.min(+imgHeight, originHeight);
             }
-            else if (width != null) {
-                newWidth = Math.min(+String(width), originWidth);
+            else if (imgWidth != null) {
+                newWidth = Math.min(+imgWidth, originWidth);
                 newHeight = Math.floor((newWidth / originWidth) * originHeight);
             }
-            else if (height != null) {
-                newHeight = Math.min(+String(height), originHeight);
+            else if (imgHeight != null) {
+                newHeight = Math.min(+imgHeight, originHeight);
                 newWidth = Math.floor((newHeight / originHeight) * originWidth);
             }
             else if (Math.min(originWidth, originHeight) > 1024) {
@@ -150,10 +154,10 @@ export default async function GetFromPath(req: Request, res: Response) {
         };
 
         let buffer: Buffer;
-        switch (type) {
+        switch (imgType) {
             case "jpg":
                 buffer = await image.jpeg({
-                    quality: Math.min(Math.max(+(quality ?? "75"), 0), 100),
+                    quality: Math.min(Math.max(parseInt(imgQuality ?? "75"), 0), 100),
                 }).toBuffer();
                 res.setHeader("Content-Type", "image/jpeg");
                 break;
@@ -163,13 +167,13 @@ export default async function GetFromPath(req: Request, res: Response) {
                 break;
             case "avif":
                 buffer = await image.avif({
-                    quality: Math.min(Math.max(+(quality ?? "50"), 0), 100),
+                    quality: Math.min(Math.max(parseInt(imgQuality ?? "50"), 0), 100),
                 }).toBuffer();
                 res.setHeader("Content-Type", "image/avif");
                 break;
             default:
                 buffer = await image.webp({
-                    quality: Math.min(Math.max(+(quality ?? "75"), 0), 100),
+                    quality: Math.min(Math.max(parseInt(imgQuality ?? "75"), 0), 100),
                 }).toBuffer();
                 res.setHeader("Content-Type", "image/webp");
                 break;
@@ -179,12 +183,11 @@ export default async function GetFromPath(req: Request, res: Response) {
 
         writeFileSync(cachepath, buffer);
     }
-    catch (err: any) {
-        console.error(err);
+    catch (err: Error | unknown) {
         res.setHeader("Content-Type", "image/svg+xml");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Expires", "-1");
         res.setHeader("Pragma", "no-cache");
-        res.sendFile(`${root}/storage/static/404-${dark === "1" ? "dark" : "light"}.svg`);
+        res.sendFile(`${root}/storage/static/404-${imgDark === "1" ? "dark" : "light"}.svg`);
     }
 }
