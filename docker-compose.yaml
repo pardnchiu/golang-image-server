@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - nodes
+    restart: unless-stopped
+    networks:
+      - frontend_network
+
+  nodes:
+    image: node:22-alpine
+    working_dir: /usr/src/app
+    volumes:
+      - ./app:/usr/src/app
+      - ./image:/usr/src/app/storage/image
+    command: ["sh", "-c", "npm install && npx pm2-runtime start app.json"]
+    environment:
+      NODE_ENV: development
+      # DOMAIN: img.joball.tw
+    restart: unless-stopped
+    networks:
+      - frontend_network
+
+networks:
+  frontend_network:
+    driver: bridge
