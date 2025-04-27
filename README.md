@@ -1,60 +1,62 @@
-# 圖片快取伺服器
+# Image Caching Server
 
-> 上傳與刪除功能因為只規劃給區網用的，所以不會做太多限制。
+> Upload and delete functions are designed for internal network use, so they will have minimal restrictions.
 
-## 專案需求
+## Features
 
-> 針對圖片做儲存與快取，加快網頁的資源響應速度。
+> This system provides storage and caching for uploaded images to improve web resource response speed.
 
-- **前端快取**
-    儲存已請求過的資源，減少對後端的重複請求，而是瀏覽器中直接回應
-    預計過期時間（1 週）
+- **Browser Caching**
+    Stores previously requested resources to reduce repeated backend requests, serving directly from browser <br>
+    Expected expiration time (1 week)
 - **Cloudflare CDN**
-    使各國家用戶能從最近的節點獲取內容，減少跨地區傳輸延遲（跨海傳輸延遲高）
-    預計過期時間（1 週）
-- **後端快取**
-    避免重複生成相同資源，節省伺服器運算，預計過期時間（1 個月）
-    Nginx 快取，減少 Nodejs 後端運算，預計過期時間（1 個月）
+    Enables users from different countries to access content from the nearest node, reducing cross-regional transmission delays (high latency in transoceanic transmission) <br>
+    Expected expiration time (1 week)
+- **Backend Caching**
+    Avoids regenerating identical resources, saving server computation, expected expiration time (1 month) <br>
+    Nginx caching, reduces Nodejs backend processing, expected expiration time (1 month)
 
-## 專案特點
+### Default Webp
 
-### 預設 Webp
+Default output format is Webp, maintaining good image quality while significantly reducing output traffic. Using the `t / type` parameter can specify output format (avif/webp/jpg/png), or the `o / origin` parameter controls whether to output the original file.
 
-預設輸出格式為 Webp，保持良好的圖片品質同時大幅減少輸出流量。透過 `t / type` 參數可以指定輸出格式（avif/webp/jpg/png），或 `o / origin` 參數控制是否輸出原檔。
+### Caching Design
 
-### 快取機制
+Multi-level cache structure: Provides four layers of caching - browser, CDN, Nginx, and cached images
+- Parameterized caching: Different versions of the same image are generated and cached based on various size and quality parameters
+- Cache directory structure: Based on the original file path, corresponding directory structures are created under `/storage/image/cache/`
 
-多層級快取結構：提供瀏覽器、CDN、Nginx 和快取圖四層快取
-- 參數化快取：根據不同的尺寸和品質參數，系統會生成並快取不同版本的同一圖片
-- 快取目錄結構：以原始檔案路徑為基礎，在 /storage/image/cache/ 下建立對應的目錄結構
+### Error Handling
 
-### 錯誤處理
+- For non-existent images: Returns a custom 404 image (controlled by the `d / dark` parameter for dark/light mode)
+- For image processing failures: Returns an explanatory message
 
-- 圖片不存在的：返回自訂的 404 圖片（透過 `d / dark` 參數控制深色/淺色）
-- 圖片處理失敗：返回說明訊息
+### Trash
 
-### 垃圾桶機制
+Date-organized trash bin mechanism
 
-按日期整理的垃圾桶機制
-
-- 刪除的檔案會移動到 `/storage/image/upload/.trash/YYYY-MM-DD/` 檔案夾
-- 按日期組織垃圾桶，便於找回特定日期刪除的檔案
-- 系統會返回檔案在垃圾桶中的位置，方便需要時恢復
+- Deleted files are moved to the `/storage/image/upload/.trash/YYYY-MM-DD/`# Uploads image to the `/storage/image/upload/[PATH]` folder
+curl -X POST \
+-H "Content-Type: multipart/form-data" \
+-F "filename=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
+[URL]/upload/[PATH] folder
+- Trash organized by date for easier recovery of files deleted on a specific date
+- System returns the file's location in the trash bin for easy restoration if needed
 
 ***
 
 ### POST：`/upload/{:path}` 
 
-> `:path` 部分可以包含 `/` 會直接依據指定位置上傳。
+> The `:path` part can include `/` and will upload directly to the specified location.
 
 ```Shell
-# 將圖片上傳至 `/storage/image/upload/[PATH]` 的檔案夾中
+# Uploads image to the `/storage/image/upload/[PATH]` folder
 curl -X POST \
 -H "Content-Type: multipart/form-data" \
 -F "filename=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
 [URL]/upload/[PATH]
 ```
-- 成功上傳：201 -> `JSON`
+- Successful upload: 201 -> `JSON`
     ```Json
     {
         "success": 1,
@@ -64,35 +66,35 @@ curl -X POST \
         "src": "[URL]/upload/[PATH]/c/img/test2/test1/ERftP1gTS7WCTeJ8_1744080848530.jpg"
     }
     ```
-- Path Null：400 -> `String`
+- Path Null: 400 -> `String`
     ```
     請至少規劃一個資料夾位置
     ```
-- Type Error：400 -> `String`
+- Type Error: 400 -> `String`
     ```
     僅支持 jpg / png / webp / svg / pdf
     ```
-- Upload Error：500 -> `String`
+- Upload Error: 500 -> `String`
     ```
     檔案不存在或上傳失敗
     ```
 
 ### DELETE：`/del/{:path}` 
 
-> `:path` 部分可以包含 `/` 會直接依據指定位置圖片做刪除。
+> The `:path` part can include `/` and will delete the image at the specified location.
 
 ```Shell
-# 刪除 `/storage/image/upload/[PATH]` 檔案夾中的 `AQepGMnNiOxrnsKu_1744035656038.jpg`
+# Delete `AQepGMnNiOxrnsKu_1744035656038.jpg` in the `/storage/image/upload/[PATH]` folder
 curl -X DELETE \
 -H "Content-Type: application/json" \
 [URL]/del/[PATH]/AQepGMnNiOxrnsKu_1744035656038.jpg
 
-# 刪除檔案夾 /storage/image/upload/[PATH]
+# Delete folder /storage/image/upload/[PATH]
 curl -X DELETE \
 -H "Content-Type: application/json" \
 [URL]/del/[PATH]
 ```
-- 成功刪除：200 -> `JSON`
+- Successful deletion: 200 -> `JSON`
     ```Json
     // 檔案
     {
@@ -121,45 +123,45 @@ curl -X DELETE \
 
 ### GET：`/c/img/{:filepath}`
 
-#### 可用參數
-- `o / origin`：回傳原始檔（優先級最高）
-- `s / size`：指定圖片短邊長度（優先級高於 width / height）
-- `w / width`：指定圖片寬度
-- `h / height`：指定圖片高度
-- `q / quality`：指定圖片質量 (1-100)，預設 75
-- `t / type`：指定類型（avif|webp|jpg|png），預設 webp
-- `d / dark`：指定 404 圖片色系（1|0），預設 0
+#### Available Parameters
+- `o / origin`: Return original file (highest priority)
+- `s / size`: Specify image short edge length (higher priority than width/height)
+- `w / width`: Specify image width
+- `h / height`: Specify image height
+- `q / quality`: Specify image quality (1-100), default 75
+- `t / type`: Specify type (avif|webp|jpg|png), default webp
+- `d / dark`: Specify 404 image color scheme (1|0), default 0
 
-### CDN 快取
+### CDN
 
-> 把網址改為 cloudflare worker 指向，達成全球快取。
+> Change URL to point to Cloudflare worker to achieve global caching.
 
-### 流程圖
+### Flow
 
 <details>
 <summary>Upload</summary>
 
 ```mermaid
 flowchart TD
-    A["客戶端"] -- GET --> S{"瀏覽器快取是否存在<br>（7 天）"}
-    S -- 是 --> A
-    S -- 否 --> B{"請求來源"}
-    B -- "Image Server" --> C["Nginx 代理"]
-    B -- Cloudflare Worker --> D["CDN 節點"]
-    C -- 檢查 Nginx 快取 --> E{"Nginx 快取是否存在<br>（30 天）"}
-    E -- 是 --> F["返回 Nginx 快取"]
-    E -- 否 --> G["轉發到圖片處理服務"]
-    D -- 檢查 Cloudflare 快取 --> H{"Cloudflare 快取是否存在<br>（7 天）"}
-    H -- 是 --> I["返回 Cloudflare 快取"]
-    H -- 否 --> C
-    G --> K{"檢查本地快取檔案<br>是否存在<br>（30 天）"}
-    K -- 是 --> L["返回本地快取檔案"]
-    K -- 否 --> M{"檢查參數"}
-    M -- "origin=1" --> N["返回原始圖片"]
-    M -- 生成快取檔案<br>預設長邊最大 1024 px --> P["處理圖片並轉換為 WebP"]
-    P --> Q["儲存為本地快取檔案"]
-    Q --> R["返回本地快取檔案"]
-    F --> T["設置 HTTP 快取 Header"]
+    A["Client"] -- GET --> S{"Browser cache exists?<br>(7 days)"}
+    S -- Yes --> A
+    S -- No --> B{"Request source"}
+    B -- "Image Server" --> C["Nginx proxy"]
+    B -- Cloudflare Worker --> D["CDN node"]
+    C -- Check Nginx cache --> E{"Nginx cache exists?<br>(30 days)"}
+    E -- Yes --> F["Return Nginx cache"]
+    E -- No --> G["Forward to image processing service"]
+    D -- Check Cloudflare cache --> H{"Cloudflare cache exists?<br>(7 days)"}
+    H -- Yes --> I["Return Cloudflare cache"]
+    H -- No --> C
+    G --> K{"Check if local cache file<br>exists<br>(30 days)"}
+    K -- Yes --> L["Return local cache file"]
+    K -- No --> M{"Check parameters"}
+    M -- "origin=1" --> N["Return original image"]
+    M -- Generate cache file<br>Default max long edge 1024 px --> P["Process image and convert to WebP"]
+    P --> Q["Save as local cache file"]
+    Q --> R["Return local cache file"]
+    F --> T["Set HTTP cache headers"]
     I --> T
     L --> T
     N --> T
@@ -174,18 +176,18 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[客戶端] -->|POST| B[上傳服務]
-    B -->|接收請求| C{檢查客戶端 IP}
-    C -->|IP 非允許| D[返回權限錯誤]
-    C -->|IP 通過| E{檢查路徑參數}
-    E -->|路徑無效| F[返回錯誤]
-    E -->|路徑有效| G[創建資料夾]
-    G --> H[生成隨機檔名]
-    H --> I{檢查檔案類型}
-    I -->|不支援的類型| J[返回錯誤]
-    I -->|支援的類型| K[保存檔案]
-    K --> L[返回成功回應]
-    L --> M[包含快取連結和 CDN 連結]
+    A[Client] -->|POST| B[Upload service]
+    B -->|Receive request| C{Check client IP}
+    C -->|IP not allowed| D[Return permission error]
+    C -->|IP passed| E{Check path parameter}
+    E -->|Invalid path| F[Return error]
+    E -->|Valid path| G[Create folder]
+    G --> H[Generate random filename]
+    H --> I{Check file type}
+    I -->|Unsupported type| J[Return error]
+    I -->|Supported type| K[Save file]
+    K --> L[Return success response]
+    L --> M[Include cache link and CDN link]
     M --> A
     D --> A
     F --> A
