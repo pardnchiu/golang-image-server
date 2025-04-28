@@ -52,7 +52,7 @@ export default async function PostToPath(req: Request, res: Response) {
                 };
             }
         })
-    }).single("filename");
+    }).single("filepath");
 
     upload(req, res, (err) => {
         if (err) {

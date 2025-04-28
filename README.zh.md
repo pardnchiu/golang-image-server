@@ -51,7 +51,7 @@
 # 將圖片上傳至 `/storage/image/upload/[PATH]` 的檔案夾中
 curl -X POST \
 -H "Content-Type: multipart/form-data" \
--F "filename=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
+-F "filepath=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
 [URL]/upload/[PATH]
 ```
 - 成功上傳：201 -> `JSON`

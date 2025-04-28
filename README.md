@@ -36,10 +36,6 @@ Multi-level cache structure: Provides four layers of caching - browser, CDN, Ngi
 Date-organized trash bin mechanism
 
 - Deleted files are moved to the `/storage/image/upload/.trash/YYYY-MM-DD/`# Uploads image to the `/storage/image/upload/[PATH]` folder
-curl -X POST \
--H "Content-Type: multipart/form-data" \
--F "filename=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
-[URL]/upload/[PATH] folder
 - Trash organized by date for easier recovery of files deleted on a specific date
 - System returns the file's location in the trash bin for easy restoration if needed
 
@@ -53,7 +49,7 @@ curl -X POST \
 # Uploads image to the `/storage/image/upload/[PATH]` folder
 curl -X POST \
 -H "Content-Type: multipart/form-data" \
--F "filename=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
+-F "filepath=@/Users/pardn/Desktop/Wallpaper-Desktop/rain_clouds_sky-wallpaper-5120x3200.jpg" \
 [URL]/upload/[PATH]
 ```
 - Successful upload: 201 -> `JSON`
