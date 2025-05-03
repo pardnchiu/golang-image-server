@@ -256,13 +256,13 @@ func GetFileCachePath(path, imgSize, imgWidth, imgHeight, imgType, imgQuality, i
 	case imgSize != "":
 		return fmt.Sprintf("%s_%s_%s_%s_%s.%s", filePath, imgSize, imgQuality, imgBlur, imgBright, imgType)
 	case imgWidth != "" && imgHeight != "":
-		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.%s", filePath, imgWidth, imgQuality, imgBlur, imgBright, imgHeight, imgType)
+		return fmt.Sprintf("%s_%s_%s_%s_%s_%s.%s", filePath, imgWidth, imgHeight, imgQuality, imgBlur, imgBright, imgType)
 	case imgWidth != "":
 		return fmt.Sprintf("%s_%s_auto_%s_%s_%s.%s", filePath, imgWidth, imgQuality, imgBlur, imgBright, imgType)
 	case imgHeight != "":
 		return fmt.Sprintf("%s_auto_%s_%s_%s_%s.%s", filePath, imgHeight, imgQuality, imgBlur, imgBright, imgType)
 	default:
-		return fmt.Sprintf("%s_%s_%s_%s.%s", filePath, imgQuality, imgBlur, imgBright, imgType)
+		return fmt.Sprintf("%s_auto_auto_%s_%s_%s.%s", filePath, imgQuality, imgBlur, imgBright, imgType)
 	}
 }
 

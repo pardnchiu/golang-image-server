@@ -48,15 +48,15 @@ export default async function GetFromPath(req: Request, res: Response) {
             .replace(/\.\w+$/, "");
         switch (true) {
             case (imgSize != null):
-                return `${path}_${imgSize}.${imgType}`;
+                return `${path}_${imgSize}_${imgQuality || ""}.${imgType}`;
             case (imgWidth != null && imgHeight != null):
-                return `${path}_${imgWidth}_${imgHeight}.${imgType}`;
+                return `${path}_${imgWidth}_${imgHeight}_${imgQuality || ""}.${imgType}`;
             case (imgWidth != null):
-                return `${path}_${imgWidth}_auto.${imgType}`;
+                return `${path}_${imgWidth}_auto_${imgQuality || ""}.${imgType}`;
             case (imgHeight != null):
-                return `${path}_auto_${imgHeight}.${imgType}`;
+                return `${path}_auto_${imgHeight}_${imgQuality || ""}.${imgType}`;
             default:
-                return `${path}.${imgType}`;
+                return `${path}_auto_auto_${imgQuality || ""}.${imgType}`;
         };
     })();
 

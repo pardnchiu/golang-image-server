@@ -1,0 +1,28 @@
+2025/05/03 11:55:08 [notice] 1#1: using the "epoll" event method
+2025/05/03 11:55:08 [notice] 1#1: nginx/1.28.0
+2025/05/03 11:55:08 [notice] 1#1: built by gcc 14.2.0 (Alpine 14.2.0) 
+2025/05/03 11:55:08 [notice] 1#1: OS: Linux 6.10.14-linuxkit
+2025/05/03 11:55:08 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2025/05/03 11:55:08 [notice] 1#1: start worker processes
+2025/05/03 11:55:08 [notice] 1#1: start worker process 20
+2025/05/03 11:55:08 [notice] 1#1: start worker process 21
+2025/05/03 11:55:08 [notice] 1#1: start cache manager process 22
+2025/05/03 11:55:08 [notice] 1#1: start cache loader process 23
+2025/05/03 11:56:08 [notice] 23#23: http file cache: /var/cache/nginx/images 0.000M, bsize: 4096
+2025/05/03 11:56:08 [notice] 1#1: signal 17 (SIGCHLD) received from 23
+2025/05/03 11:56:08 [notice] 1#1: cache loader process 23 exited with code 0
+2025/05/03 11:56:08 [notice] 1#1: signal 29 (SIGIO) received
+2025/05/03 11:56:19 [warn] 21#21: *1 a client request body is buffered to a temporary file /var/cache/nginx/client_temp/0000000001, client: 192.168.65.1, server: _, request: "POST /upload/test/ HTTP/1.1", host: "localhost:8080"
+2025/05/03 11:58:10 [notice] 1#1: signal 3 (SIGQUIT) received, shutting down
+2025/05/03 11:58:10 [notice] 20#20: gracefully shutting down
+2025/05/03 11:58:10 [notice] 20#20: exiting
+2025/05/03 11:58:10 [notice] 21#21: gracefully shutting down
+2025/05/03 11:58:10 [notice] 21#21: exiting
+2025/05/03 11:58:10 [notice] 22#22: exiting
+2025/05/03 11:58:10 [notice] 20#20: exit
+2025/05/03 11:58:10 [notice] 21#21: exit
+2025/05/03 11:58:10 [notice] 1#1: signal 17 (SIGCHLD) received from 20
+2025/05/03 11:58:10 [notice] 1#1: worker process 20 exited with code 0
+2025/05/03 11:58:10 [notice] 1#1: worker process 21 exited with code 0
+2025/05/03 11:58:10 [notice] 1#1: cache manager process 22 exited with code 0
+2025/05/03 11:58:10 [notice] 1#1: exit

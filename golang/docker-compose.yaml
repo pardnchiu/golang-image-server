@@ -1,4 +1,5 @@
 version: '3.8'
+name: image-caching-server-golang
 
 services:
   nginx:
@@ -7,13 +8,14 @@ services:
       - "8080:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx
     depends_on:
-      - nodes
+      - golang
     restart: unless-stopped
     networks:
       - frontend_network
 
-  nodes:
+  golang:
     image: golang:1.22-alpine
     working_dir: /go/src/app
     volumes:
@@ -24,6 +26,8 @@ services:
       - -c
       - |
         apk add --no-cache vips-dev build-base pkgconfig
+        # HEIF/AVIF
+        apk add --no-cache libheif-dev libavif-dev
         go get github.com/davidbyttow/govips/v2/vips
         go build -o main ./cmd/server && ./main
     environment:

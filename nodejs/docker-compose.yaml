@@ -1,4 +1,5 @@
 version: '3.8'
+name: image-caching-server-nodejs
 
 services:
   nginx:
@@ -7,13 +8,14 @@ services:
       - "8080:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log/nginx
     depends_on:
-      - nodes
+      - nodejs
     restart: unless-stopped
     networks:
       - frontend_network
 
-  nodes:
+  nodejs:
     image: node:22-alpine
     working_dir: /usr/src/app
     volumes:
