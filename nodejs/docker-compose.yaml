@@ -7,8 +7,8 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./nginx/logs:/var/log/nginx
+      - ./config/nginx:/etc/nginx/conf.d
+      - ./logs/nginx:/var/log/nginx
     depends_on:
       - nodejs
     restart: unless-stopped
@@ -20,8 +20,9 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./app:/usr/src/app
+      - ./logs/nodejs/:/usr/src/app/storage/logs
       - ./image:/usr/src/app/storage/image
-    command: ["sh", "-c", "npm install && npx pm2-runtime start app.json"]
+    command: [ "sh", "-c", "npm install && npx pm2-runtime start app.json" ]
     environment:
       NODE_ENV: development
       # DOMAIN: img.joball.tw

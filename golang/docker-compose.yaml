@@ -7,8 +7,8 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - ./nginx/logs:/var/log/nginx
+      - ./config/nginx:/etc/nginx/conf.d
+      - ./logs/nginx:/var/log/nginx
     depends_on:
       - golang
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
     volumes:
       - ./app:/go/src/app
       - ./image:/go/src/app/storage/image
-    command: 
+    command:
       - /bin/sh
       - -c
       - |

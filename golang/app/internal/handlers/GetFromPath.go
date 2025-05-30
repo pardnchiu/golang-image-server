@@ -20,6 +20,127 @@ import (
 	"github.com/pardnchiu/golang-image-caching-server/internal/utils"
 )
 
+type StreamWriter struct {
+	w          gin.ResponseWriter
+	flusher    http.Flusher
+	written    int
+	bufferSize int
+}
+
+func (w *StreamWriter) Write(p []byte) (i int, err error) {
+	i, err = w.w.Write(p)
+	w.written += i
+
+	if w.written >= w.bufferSize {
+		w.flusher.Flush()
+		w.written = 0
+	}
+
+	return i, err
+}
+
+func (w *StreamWriter) finalFlush() {
+	if w.written > 0 {
+		w.flusher.Flush()
+	}
+}
+
+func streamBuffer(size int) int {
+	switch {
+	case size <= 50*1024:
+		return 2048
+	case size <= 500*1024:
+		return 4096
+	case size <= 2*1024*1024:
+		return 8192
+	default:
+		return 16384
+	}
+}
+
+func streamImage(c *gin.Context, imageData []byte) {
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		// c.Data(http.StatusOK, c.GetHeader("Content-Type"), imageData)
+		streamImage(c, imageData)
+		return
+	}
+
+	c.Header("Transfer-Encoding", "chunked")
+	c.Header("Connection", "keep-alive")
+
+	bufferSize := streamBuffer(len(imageData))
+
+	writer := &StreamWriter{
+		w:          c.Writer,
+		flusher:    flusher,
+		written:    0,
+		bufferSize: bufferSize,
+	}
+
+	c.Status(http.StatusOK)
+
+	for i := 0; i < len(imageData); i += bufferSize {
+		end := i + bufferSize
+		if end > len(imageData) {
+			end = len(imageData)
+		}
+
+		writer.Write(imageData[i:end])
+	}
+
+	writer.finalFlush()
+}
+
+func streamFile(c *gin.Context, filePath string) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		c.String(http.StatusNotFound, "File not found")
+		return
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Cannot get file info")
+		return
+	}
+
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.File(filePath)
+		return
+	}
+
+	c.Header("Transfer-Encoding", "chunked")
+	c.Header("Connection", "keep-alive")
+	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
+	bufferSize := streamBuffer(int(fileInfo.Size()))
+
+	writer := &StreamWriter{
+		w:          c.Writer,
+		flusher:    flusher,
+		written:    0,
+		bufferSize: bufferSize,
+	}
+
+	c.Status(http.StatusOK)
+
+	buffer := make([]byte, bufferSize)
+	for {
+		n, err := file.Read(buffer)
+		if n > 0 {
+			writer.Write(buffer[:n])
+		}
+		if err != nil {
+			break
+		}
+	}
+
+	writer.finalFlush()
+}
+
 func GetFromPath(c *gin.Context) {
 	imgSize := utils.GetQuery(c, []string{"s", "size"}, "")
 	imgWidth := utils.GetQuery(c, []string{"w", "width"}, "")
@@ -50,16 +171,19 @@ func GetFromPath(c *gin.Context) {
 
 	if strings.HasSuffix(filePath, ".pdf") {
 		c.Header("Content-Type", "application/pdf")
-		c.File(filePath)
+		// c.File(filePath)
+		streamFile(c, filePath)
 		return
 	} else if strings.HasSuffix(filePath, ".svg") {
 		c.Header("Content-Type", "image/svg+xml")
-		c.File(filePath)
+		// c.File(filePath)
+		streamFile(c, filePath)
 		return
 	} else if imgOrigin == "1" {
 		mimeType := GetMimeType(filePath)
 		c.Header("Content-Type", mimeType)
-		c.File(filePath)
+		// c.File(filePath)
+		streamFile(c, filePath)
 		return
 	}
 
@@ -76,7 +200,8 @@ func GetFromPath(c *gin.Context) {
 		default:
 			c.Header("Content-Type", "image/webp")
 		}
-		c.Data(http.StatusOK, c.GetHeader("Content-Type"), cacheFile)
+		// c.Data(http.StatusOK, c.GetHeader("Content-Type"), cacheFile)
+		streamImage(c, cacheFile)
 		return
 	}
 
@@ -226,7 +351,8 @@ func GetFromPath(c *gin.Context) {
 			return
 		}
 
-		c.Data(http.StatusOK, c.GetHeader("Content-Type"), result.buffer)
+		// c.Data(http.StatusOK, c.GetHeader("Content-Type"), result.buffer)
+		streamImage(c, result.buffer)
 		log.Printf("└── [INFO] create caching success: " + cachePath)
 
 	case <-ctx.Done():
